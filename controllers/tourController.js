@@ -44,6 +44,21 @@ exports.getAllTours = async (req, res) => {
       query = query.select('-__v');
     }
 
+    //// 5) Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skipVal = (page - 1) * limit;
+    /// page=2&limit=10 -> 1-10 page1, 11-2 page2 : ...
+    // skip value for page 2 when limit is 10 items, should be 10. on first page 1-10
+
+    // what if user request page that doesn't exist ?
+    if (req.query.page) {
+      const numTours = await Tour.countDocuments();
+      if (skipVal >= numTours) throw new Error('This page doesnt exist');
+    }
+
+    query = query.skip(skipVal).limit(limit);
+
     const tours = await query;
 
     res.status(200).json({

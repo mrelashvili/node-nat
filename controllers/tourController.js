@@ -13,10 +13,20 @@ exports.checkBody = (req, res, next) => {
 /// Route handlers
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    /// exclude special field names for prevent query when in url
+    /// we have page, sort, limit, fields
+    const queryObj = { ...req.query };
+    const exludedFields = ['page', 'sort', 'limit', 'fields'];
+
+    exludedFields.forEach(el => delete queryObj[el]);
+
+    const query = Tour.find(queryObj);
+
+    const tours = await query;
 
     res.status(200).json({
       status: 'success',
+      results: tours.length,
       data: {
         tours
       }

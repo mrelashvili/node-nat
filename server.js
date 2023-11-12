@@ -15,7 +15,7 @@ mongoose
     useFindAndModify: false
   })
   .then(con => {
-    console.log(`Database connected successfully`, con.connections);
+    console.log(`Database connected successfully`);
   });
 
 // const testTour = new Tour({
@@ -29,5 +29,5 @@ mongoose
 const app = require('./app');
 
 app.listen(3000, () => {
-  console.log('ola');
+  console.log('SERVER STARTED!!');
 });

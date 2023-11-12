@@ -10,6 +10,62 @@ exports.checkBody = (req, res, next) => {
   next();
 };
 
+class APIFeatures {
+  constructor(query, queryString) {
+    this.query = query;
+    this.queryString = queryString;
+  }
+
+  filter() {
+    const queryObj = { ...this.queryString };
+    const excludedFields = ['page', 'limit', 'sort', 'fields'];
+    excludedFields.forEach(el => delete queryObj[el]);
+
+    /// Advanced filtering..
+
+    let queryString = JSON.stringify(queryObj);
+    queryString = queryString.replace(
+      /\b(gte|gt|lte|lt)\b/g,
+      match => `$${match}`
+    );
+
+    // const query = Tour.find(queryObj);
+    this.query = this.query.find(JSON.parse(queryString));
+
+    return this;
+  }
+
+  sort() {
+    if (this.queryString.sort) {
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-createdAt');
+    }
+
+    return this;
+  }
+
+  limitFields() {
+    if (this.queryString.fields) {
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    } else {
+      this.query = this.query.select('-__v');
+    }
+    return this;
+  }
+
+  paginate() {
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+    this.query = this.query.skip(skip).limit(limit);
+
+    return this;
+  }
+}
+
 exports.aliasTopTours = (req, res, next) => {
   // Pre-filling query string so the user doesn't have to do it manually
   req.query.limit = '5';
@@ -22,53 +78,15 @@ exports.aliasTopTours = (req, res, next) => {
 /// Route handlers
 exports.getAllTours = async (req, res) => {
   try {
-    /// exclude special field names for prevent query when in url
-    /// we have page, sort, limit, fields
-    // 1) Filtering
-    const queryObj = { ...req.query };
-    const exludedFields = ['page', 'sort', 'limit', 'fields'];
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
 
-    exludedFields.forEach(el => delete queryObj[el]);
+    console.log(Tour.find());
 
-    /// 2) Advanced filtering
-    /// for advanced filtering -> greater than (gte), less than (lte), lt, gt
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-
-    let query = Tour.find(JSON.parse(queryStr));
-
-    //// 3) Sorting
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
-    }
-
-    //// 4) Field limiting
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
-    //// 5) Pagination
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.limit * 1 || 100;
-    const skipVal = (page - 1) * limit;
-    /// page=2&limit=10 -> 1-10 page1, 11-2 page2 : ...
-    // skip value for page 2 when limit is 10 items, should be 10. on first page 1-10
-
-    // what if user request page that doesn't exist ?
-    if (req.query.page) {
-      const numTours = await Tour.countDocuments();
-      if (skipVal >= numTours) throw new Error('This page doesnt exist');
-    }
-
-    query = query.skip(skipVal).limit(limit);
-
-    const tours = await query;
+    const tours = await features.query;
 
     res.status(200).json({
       status: 'success',

@@ -1,26 +1,21 @@
 /* eslint-disable import/no-extraneous-dependencies */
+const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const User = require('./../models/userModel');
 
-const signToken = id => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const signInToken = id => {
+  return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 };
-
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create(req.body);
-
-  const token = signToken(newUser._id);
-  // const newUser = await User.create({
-  //   name: req.body.name,
-  //   email: req.body.email,
-  //   password: req.body.password,
-  //   passwordCnfirm: req.body.passwordConfirm
+  const token = signInToken(newUser._id);
+  // jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+  //   expiresIn: process.env.JWT_EXPIRES_IN
   // });
-
   res.status(201).json({
     status: 'success',
     token,
@@ -47,7 +42,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // Send token to client
-  const token = signToken(user._id);
+  const token = signInToken(user._id);
 
   res.status(200).json({
     status: 'success',
@@ -71,7 +66,14 @@ exports.protect = catchAsync(async (req, res, next) => {
     );
   /// Validate token (Veritifcation)
 
-  /// Check if user still exists
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  /// Check if user still exists (what if user deleted in meantime?)
+  const freshUser = await User.findById(decoded.id);
+  if (!freshUser)
+    return next(
+      new AppError('The user belonging to this token does no longer exist', 401)
+    );
 
   /// Check if user changed password after JWT was issued
   next();

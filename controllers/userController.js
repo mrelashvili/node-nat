@@ -1,22 +1,28 @@
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
+
 /// Route handlers
-exports.getAllUsers = (req, res) => {
+exports.getAllUsers = catchAsync(async (req, res) => {
+  const users = await User.find();
   res.status(200).json({
     status: 'success',
-    data: '',
+    data: {
+      users
+    }
   });
-};
+});
 
 exports.createUser = (req, res) => {
   res.status(200).json({
     status: 'success',
-    data: '',
+    data: ''
   });
 };
 
 exports.getUser = (req, res) => {
   res.status(200).json({
     status: 'success',
-    data: '',
+    data: ''
   });
 };
 
@@ -24,14 +30,14 @@ exports.updateUser = (req, res) => {
   res.status(200).json({
     status: 'success',
     data: {
-      tour: 'Update tour here...',
-    },
+      tour: 'Update tour here...'
+    }
   });
 };
 
 exports.deleteUser = (req, res) => {
   res.status(204).json({
     status: 'success',
-    data: null,
+    data: null
   });
 };

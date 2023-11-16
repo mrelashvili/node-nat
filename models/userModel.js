@@ -43,7 +43,12 @@ const userSchema = new mongoose.Schema({
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
-  passwordResetExpires: Date
+  passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  }
 });
 
 userSchema.pre('save', async function(next) {
@@ -57,6 +62,13 @@ userSchema.pre('save', async function(next) {
 
   /// Delete passwordconfirm field
   this.passwordConfirm = undefined;
+  next();
+});
+
+/// Just to return just the users with the active property true (for example when requestin form postman)
+userSchema.pre(/^find/, function(next) {
+  // this points to current query.
+  this.find({ active: { $ne: false } });
   next();
 });
 

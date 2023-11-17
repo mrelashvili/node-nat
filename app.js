@@ -2,6 +2,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const AppError = require('./utils/appError');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -10,9 +11,13 @@ const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 
-/// Midleware
+/// set Security HTTP headers
+app.use(helmet());
+
+/// Midleware for loggin
 app.use(morgan('dev'));
 
+/// Limit requests from same API
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000, // converting to mms
@@ -20,9 +25,8 @@ const limiter = rateLimit({
 });
 
 app.use('/api', limiter);
-
-app.use(express.json());
-
+//// Body parser, reading data from body into req.body - middleware.
+app.use(express.json({ limit: '10kb' }));
 /// midleware for static files
 app.use(express.static(`${__dirname}/public`));
 

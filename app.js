@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const AppError = require('./utils/appError');
 const tourRouter = require('./routes/tourRoutes');
@@ -36,6 +37,21 @@ app.use(express.json({ limit: '10kb' }));
 app.use(mongoSanitize());
 // Data sanitization against XSS
 app.use(xss());
+
+// Prevent parameter pollution  /api/v1/tours?sort=duration&sort=price -> When we define sort two times it creates ARRAY, so it can't call split method on it. To avoid this, we can use this middleware.
+// Sometimes we can define parameters two or more times, like duration. so to make it work, we should define them in whitelist
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuality',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price'
+    ]
+  })
+);
 
 /// midleware for static files
 app.use(express.static(`${__dirname}/public`));

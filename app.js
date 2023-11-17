@@ -1,5 +1,7 @@
+/* eslint-disable import/no-extraneous-dependencies */
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const AppError = require('./utils/appError');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -10,6 +12,15 @@ const app = express();
 
 /// Midleware
 app.use(morgan('dev'));
+
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000, // converting to mms
+  message: 'Too many request FROM this IP'
+});
+
+app.use('/api', limiter);
+
 app.use(express.json());
 
 /// midleware for static files

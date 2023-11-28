@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const fs = require('fs');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -16,13 +17,11 @@ mongoose
     useCreateIndex: true,
     useFindAndModify: false
   })
-  .then(con => {
+  .then(() => {
     console.log(`Database connected successfully`);
   });
 
-const data = JSON.parse(
-  fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
-);
+const data = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
 
 const importData = async () => {
   try {

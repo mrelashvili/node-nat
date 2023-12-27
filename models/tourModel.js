@@ -105,7 +105,7 @@ const tourSchema = new mongoose.Schema(
         day: Number
       }
     ],
-    guides: Array
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }]
   },
   {
     toJSON: { virtuals: true }, // So that the `startLocation` field is included when we serialize our data to JSON for API
